@@ -74,11 +74,17 @@ def main(out=None):
 	#		sys.exit()
 
 	if (args.solve):
-
-		StartBrowser(words, solvetype="wordle", headless=args.show_browser, ss=os.path.abspath(args.save_screenshot))
+		if (args.save_screenshot != None):
+			StartBrowser(words, solvetype="wordle", headless=args.show_browser, ss=os.path.abspath(args.save_screenshot))
+		else:
+			StartBrowser(words, solvetype="wordle", headless=args.show_browser)
 		return
 	if (args.wordle_archive != None):
-		StartBrowser(words, solvetype=args.wordle_archive, headless=args.show_browser, ss=os.path.abspath(args.save_screenshot))
+		if (args.save_screenshot != None):
+			StartBrowser(words, solvetype=args.wordle_archive, headless=args.show_browser, ss=os.path.abspath(args.save_screenshot))
+		else:
+			StartBrowser(words, solvetype=args.wordle_archive, headless=args.show_browser)
+		
 		return
 
 @logger
@@ -245,6 +251,7 @@ def StartBrowser(words, solvetype="wordle", headless=True, ss=None, out=None):
 			temp.append(i)
 	words = temp
 	Type(words[rand(0, len(words)-1)], buttons)
+	out("Finding result.")
 	time.sleep(1)
 	letters = br.execute_script("return arguments[0].shadowRoot", board[row]).find_element(By.CLASS_NAME, "row").find_elements(By.TAG_NAME, "game-tile")
 	for letter in range(len(letters)):
@@ -302,6 +309,7 @@ def StartBrowser(words, solvetype="wordle", headless=True, ss=None, out=None):
 		words = temp
 
 		Type(words[rand(0, len(words)-1)], buttons)
+		out("Finding result.")
 		time.sleep(1)
 		game = root.find_element(by = By.TAG_NAME, value = "game-theme-manager").find_element(By.ID, "game")
 		board = game.find_element(By.ID, "board-container").find_element(By.ID, "board").find_elements(By.TAG_NAME, "game-row")
