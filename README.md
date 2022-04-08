@@ -9,3 +9,31 @@ Install directions:
 2. Download a build of chromium (here: https://download-chromium.appspot.com/) and place the chrome-win folder into the root. (Make sure it's named "chrome-win")
 3. Run pip install -r requirements.txt using the requirements.txt in the root, using Python 3.10
 4. Run py ./app to run
+
+# Commands
+## Help
+```
+-h, --help
+```
+- Just shows these commands.
+## Solve
+```
+-s, --solve
+```
+- Solves todays wordle.
+## Wordle Archive
+```
+-wa ARCHIVE_NUMBER, --wordle-archive ARCHIVE_NUMBER
+```
+- Solves a wordle archive where ARCHIVE_NUMBER is the specific day to solve
+## Show Browser
+```
+-sb, --show-browser
+```
+- Default = False
+- If false then the browser will open headless
+## Save Screenshot
+```
+-ss FILE_PATH, --save_screenshot FILE_PATH
+```
+- Saves a screenshot once the right answer was found
