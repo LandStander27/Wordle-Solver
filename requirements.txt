@@ -8,6 +8,7 @@ cryptography==36.0.2
 h11==0.13.0
 idna==3.3
 outcome==1.1.0
+Pillow==9.1.0
 pycparser==2.21
 pyOpenSSL==22.0.0
 PySocks==1.7.1

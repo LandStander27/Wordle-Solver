@@ -1,4 +1,3 @@
-from typing import ContextManager
 import requests
 import argparse
 import sys
@@ -18,6 +17,7 @@ from selenium.webdriver.chrome.service import Service
 from random import randint as rand
 import string
 import os
+from PIL import Image
 
 def logger(func):
     def out(msg):
@@ -54,6 +54,7 @@ def ArgParser(args, out=None):
 	parser.add_argument("-s", "--solve", help="Start solving todays wordle", action="store_true")
 	parser.add_argument("-wa", "--wordle-archive", help="Start solving a wordle archive (https://wordlearchive.com/{argument})")
 	parser.add_argument("-sb", "--show-browser", help="Show the browser window", action="store_false", default=True)
+	parser.add_argument("-ss", "--save-screenshot", help="Save a screenshot of the wordle once the right answer is found")
 
 	return parser.parse_args(args)
 
@@ -62,12 +63,17 @@ def main(out=None):
 	words = DownloadData()
 	args = ArgParser(sys.argv[1:])
 
+	#if (args.save_screenshot != None):
+	#	if (os.path.exists(args.save_screenshot)):
+	#		out("Screenshot file already exists.")
+	#		sys.exit()
+
 	if (args.solve):
 
-		StartBrowser(words, solvetype="wordle", headless=args.show_browser)
+		StartBrowser(words, solvetype="wordle", headless=args.show_browser, ss=os.path.abspath(args.save_screenshot))
 		return
 	if (args.wordle_archive != None):
-		StartBrowser(words, solvetype=args.wordle_archive, headless=args.show_browser)
+		StartBrowser(words, solvetype=args.wordle_archive, headless=args.show_browser, ss=os.path.abspath(args.save_screenshot))
 		return
 
 @logger
@@ -134,7 +140,7 @@ def Type(word, buttons, out=None):
 	out("Sending data to wordle.")
 	for i in word:
 		buttons[i].click()
-	#time.sleep(1)
+	time.sleep(0.1)
 	buttons["enter"].click()
 
 @logger
@@ -150,7 +156,7 @@ def RemoveCopy(result, out=None):
 	return result
 
 @logger
-def StartBrowser(words, solvetype="wordle", headless=True, out=None):
+def StartBrowser(words, solvetype="wordle", headless=True, ss=None, out=None):
 	out("Creating webdriver.")
 
 	option = webdriver.ChromeOptions()
@@ -161,32 +167,41 @@ def StartBrowser(words, solvetype="wordle", headless=True, out=None):
 		option.add_argument('--disable-gpu')
 	option.add_experimental_option('excludeSwitches', ['enable-logging'])
 	option.add_argument('--log-level=OFF')
+	option.add_argument("--window-size=1920x1080")
+	option.add_argument("--start-maximized")
 
 	br = webdriver.Chrome(options=option, service=Service(os.path.dirname(__file__) + "\\..\\chromedriver.exe"))
 
-	out("Loading wordle.")
+	
 	if (solvetype == "wordle"):
+		out("Loading https://www.nytimes.com/games/wordle/index.html.")
 		br.get("https://www.nytimes.com/games/wordle/index.html")
 	else:
+		out("Loading https://wordlearchive.com/" + str(solvetype))
 		br.get("https://wordlearchive.com/" + str(solvetype))
 
 	out("Parsing HTML.")
 	if (solvetype == "wordle"):
 		try:
 			row = br.find_element(By.CLASS_NAME, "nightmode")
+			out("Dark mode detected.")
 		except selenium.common.exceptions.NoSuchElementException:
 			row = br.find_element(By.XPATH, "/html/body")
+			out("Light mode detected.")
 	else:
 		try:
 			row = br.find_element(By.CLASS_NAME, "page-home nightmode")
+			out("Dark mode detected.")
 		except selenium.common.exceptions.NoSuchElementException:
 			row = br.find_element(By.CLASS_NAME, "page-home")
+			out("Light mode detected.")
 	#row.find_element(By.XPATH, "game-app").find_element(By.XPATH, "//game-theme-manager").find_element(By.XPATH, "div").find_element(By.XPATH, "game-keyboard")
 	game = row.find_element(By.XPATH, "game-app")
 	#root = test.shadow_root
 	root = br.execute_script("return arguments[0].shadowRoot", game)
 	
 	if (solvetype == "wordle"):
+		out("Closing help menu.")
 		close = root.find_element(by = By.TAG_NAME, value = "game-theme-manager").find_element(By.TAG_NAME, "header").find_element(By.CLASS_NAME, "menu-left").find_element(By.ID, "nav-button")
 		ac = ActionChains(br)
 		ac.move_to_element(close).click().perform()
@@ -194,6 +209,9 @@ def StartBrowser(words, solvetype="wordle", headless=True, out=None):
 	keyboard = root.find_element(by = By.TAG_NAME, value = "game-theme-manager").find_element(By.ID, "game").find_element(By.TAG_NAME, "game-keyboard")
 
 	game = root.find_element(by = By.TAG_NAME, value = "game-theme-manager").find_element(By.ID, "game")
+
+	out("Finding button elements.")
+
 	board = game.find_element(By.ID, "board-container").find_element(By.ID, "board").find_elements(By.TAG_NAME, "game-row")
 
 
@@ -231,6 +249,13 @@ def StartBrowser(words, solvetype="wordle", headless=True, out=None):
 	result = RemoveCopy(result)
 
 	if (len(result["correct"]) == 15):
+		if (ss != None):
+			out("Taking screenshot.")
+			time.sleep(2)
+			br.save_screenshot(ss)
+			#img = Image.open(ss)
+			#img.crop((785, 204, 1118, 607)).save(ss)
+			out(f"Screenshot saved to {ss}.")
 		out(f"Answer found! {board[row].get_attribute('letters')}")
 		br.close()
 		return
@@ -285,6 +310,13 @@ def StartBrowser(words, solvetype="wordle", headless=True, out=None):
 		result = RemoveCopy(result)
 
 		if (len(result["correct"]) == 15):
+			if (ss != None):
+				out("Taking screenshot.")
+				time.sleep(2)
+				br.save_screenshot(ss)
+				#img = Image.open(ss)
+				#img.crop((785, 204, 1118, 607)).save(ss)
+				out(f"Screenshot saved to {ss}.")
 			out(f"Answer found! {board[row].get_attribute('letters')}")
 			br.close()
 			return
@@ -294,7 +326,7 @@ def StartBrowser(words, solvetype="wordle", headless=True, out=None):
 		if (row >= 5):
 			out(f"No answer found, restarting...")
 			br.close()
-			StartBrowser(words, solvetype=solvetype, headless=headless)
+			StartBrowser(words, solvetype=solvetype, headless=headless, ss=ss)
 			sys.exit()
 
 		newwords = []
