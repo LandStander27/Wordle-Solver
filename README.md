@@ -7,8 +7,16 @@ Install directions:
 ---
 1. Download code as a zip and extract it to anywhere
 2. Download a build of chromium (here: https://download-chromium.appspot.com/) and place the chrome-win folder into the root. (Make sure it's named "chrome-win")
-3. Run pip install -r requirements.txt using the requirements.txt in the root, using Python 3.10
-4. Run py ./app to run
+4. Run pip install -r requirements.txt using the requirements.txt in the root, using Python 3.10
+5. Run py ./app to run
+
+- The folder structure should look like this
+```
+app -> Program
+chrome-win -> Chromium
+chromedriver.exe
+requirements.txt
+```
 
 # Commands
 ## Help
