@@ -1,3 +1,4 @@
+from typing import ContextManager
 import requests
 import argparse
 import sys
@@ -8,6 +9,7 @@ import defs
 from colorama import Fore as f
 from random import randint as rand
 from selenium import webdriver
+import selenium
 from selenium.webdriver.common.by import By
 from datetime import datetime
 import time
@@ -46,10 +48,27 @@ def DownloadData(out=None):
 letters = "q w e r t y u i o p a s d f g h j k l z x c v b n m".split(" ")
 
 @logger
+def ArgParser(args, out=None):
+	out("Parsing arguments.")
+	parser = argparse.ArgumentParser(description="Wordle solver")
+	parser.add_argument("-s", "--solve", help="Start solving todays wordle", action="store_true")
+	parser.add_argument("-wa", "--wordle-archive", help="Start solving a wordle archive (https://wordlearchive.com/{argument})")
+	parser.add_argument("-sb", "--show-browser", help="Show the browser window", action="store_false", default=True)
+
+	return parser.parse_args(args)
+
+@logger
 def main(out=None):
 	words = DownloadData()
+	args = ArgParser(sys.argv[1:])
 
-	StartBrowser(words)
+	if (args.solve):
+
+		StartBrowser(words, solvetype="wordle", headless=args.show_browser)
+		return
+	if (args.wordle_archive != None):
+		StartBrowser(words, solvetype=args.wordle_archive, headless=args.show_browser)
+		return
 
 @logger
 def StartSolveProcess(words, green, gray, yellow, YellowNot, out=None):
@@ -131,30 +150,46 @@ def RemoveCopy(result, out=None):
 	return result
 
 @logger
-def StartBrowser(words, out=None):
+def StartBrowser(words, solvetype="wordle", headless=True, out=None):
 	out("Creating webdriver.")
 
 	option = webdriver.ChromeOptions()
 
 	option.binary_location = os.path.dirname(__file__) + "\\..\\chrome-win\\chrome.exe"
-	
-	
+	if (headless):
+		option.headless = True
+		option.add_argument('--disable-gpu')
+	option.add_experimental_option('excludeSwitches', ['enable-logging'])
+	option.add_argument('--log-level=OFF')
 
 	br = webdriver.Chrome(options=option, service=Service(os.path.dirname(__file__) + "\\..\\chromedriver.exe"))
 
 	out("Loading wordle.")
-	br.get("https://www.nytimes.com/games/wordle/index.html")
+	if (solvetype == "wordle"):
+		br.get("https://www.nytimes.com/games/wordle/index.html")
+	else:
+		br.get("https://wordlearchive.com/" + str(solvetype))
 
 	out("Parsing HTML.")
-	row = br.find_element(By.CLASS_NAME, "nightmode")
+	if (solvetype == "wordle"):
+		try:
+			row = br.find_element(By.CLASS_NAME, "nightmode")
+		except selenium.common.exceptions.NoSuchElementException:
+			row = br.find_element(By.XPATH, "/html/body")
+	else:
+		try:
+			row = br.find_element(By.CLASS_NAME, "page-home nightmode")
+		except selenium.common.exceptions.NoSuchElementException:
+			row = br.find_element(By.CLASS_NAME, "page-home")
 	#row.find_element(By.XPATH, "game-app").find_element(By.XPATH, "//game-theme-manager").find_element(By.XPATH, "div").find_element(By.XPATH, "game-keyboard")
 	game = row.find_element(By.XPATH, "game-app")
 	#root = test.shadow_root
 	root = br.execute_script("return arguments[0].shadowRoot", game)
 	
-	close = root.find_element(by = By.TAG_NAME, value = "game-theme-manager").find_element(By.TAG_NAME, "header").find_element(By.CLASS_NAME, "menu-left").find_element(By.ID, "nav-button")
-	ac = ActionChains(br)
-	ac.move_to_element(close).click().perform()
+	if (solvetype == "wordle"):
+		close = root.find_element(by = By.TAG_NAME, value = "game-theme-manager").find_element(By.TAG_NAME, "header").find_element(By.CLASS_NAME, "menu-left").find_element(By.ID, "nav-button")
+		ac = ActionChains(br)
+		ac.move_to_element(close).click().perform()
 
 	keyboard = root.find_element(by = By.TAG_NAME, value = "game-theme-manager").find_element(By.ID, "game").find_element(By.TAG_NAME, "game-keyboard")
 
@@ -170,8 +205,13 @@ def StartBrowser(words, out=None):
 		for button in row.find_elements(By.XPATH, "*"):
 			buttons[button.get_attribute("data-key")] = button
 	
-	buttons["enter"] = buttons["↵"]
-	buttons.pop("↵")
+	if (solvetype == "wordle"):
+		buttons["enter"] = buttons["↵"]
+		buttons.pop("↵")
+	else:
+
+		buttons["enter"] = buttons["â†µ"]
+		buttons.pop("â†µ")
 
 	out("Solving.")
 	row = 0
@@ -254,7 +294,7 @@ def StartBrowser(words, out=None):
 		if (row >= 5):
 			out(f"No answer found, restarting...")
 			br.close()
-			StartBrowser(words)
+			StartBrowser(words, solvetype=solvetype, headless=headless)
 			sys.exit()
 
 		newwords = []
