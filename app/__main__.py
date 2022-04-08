@@ -313,7 +313,7 @@ def StartBrowser(words, solvetype="wordle", headless=True, ss=None, out=None):
 		time.sleep(1)
 		game = root.find_element(by = By.TAG_NAME, value = "game-theme-manager").find_element(By.ID, "game")
 		board = game.find_element(By.ID, "board-container").find_element(By.ID, "board").find_elements(By.TAG_NAME, "game-row")
-		br.execute_script("return arguments[0].shadowRoot", board[row])
+		#br.execute_script("return arguments[0].shadowRoot", board[row])
 		letters = br.execute_script("return arguments[0].shadowRoot", board[row]).find_element(By.CLASS_NAME, "row").find_elements(By.XPATH, "*")
 		for letter in range(len(letters)):
 			result[letters[letter].get_attribute("evaluation")] += letters[letter].get_attribute("letter") + str(letter) + ','
@@ -330,7 +330,7 @@ def StartBrowser(words, solvetype="wordle", headless=True, ss=None, out=None):
 				#img = Image.open(ss)
 				#img.crop((785, 204, 1118, 607)).save(ss)
 				out(f"Screenshot saved to {ss}.")
-			out(f"Answer found! {board[row].get_attribute('letters')}")
+			out(f"Answer found!: {f.LIGHTYELLOW_EX}{board[row].get_attribute('letters')}")
 			br.close()
 			return
 
