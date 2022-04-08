@@ -60,6 +60,11 @@ def ArgParser(args, out=None):
 
 @logger
 def main(out=None):
+
+	if (len(sys.argv) == 1):
+		out("No arguments given")
+		return
+
 	words = DownloadData()
 	args = ArgParser(sys.argv[1:])
 
