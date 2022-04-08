@@ -368,6 +368,6 @@ def StartBrowser(words, solvetype="wordle", headless=True, ss=None, out=None):
 
 		row += 1
 	
-
-main()
+if (__name__ == "__main__"):
+	main()
 
