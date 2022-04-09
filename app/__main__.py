@@ -52,9 +52,10 @@ def ArgParser(args, out=None):
 	out("Parsing arguments.")
 	parser = argparse.ArgumentParser(description="Wordle solver")
 	parser.add_argument("-s", "--solve", help="Start solving todays wordle", action="store_true")
-	parser.add_argument("-wa", "--wordle-archive", help="Start solving a wordle archive (https://wordlearchive.com/{argument})")
+	parser.add_argument("-wa", "--wordle-archive", help="Start solving a wordle archive (https://wordlearchive.com/{argument})", type=int)
 	parser.add_argument("-sb", "--show-browser", help="Show the browser window", action="store_false", default=True)
-	parser.add_argument("-ss", "--save-screenshot", help="Save a screenshot of the wordle once the right answer is found")
+	parser.add_argument("-ss", "--save-screenshot", help="Save a screenshot of the wordle once the right answer is found", type=str)
+	parser.add_argument("--hint", help="Pass a number and you will get the letter that is in that place in the word, if this is not passed the wordle/wordle archive is solved regularly. --show-browser is ignored and logs are supressed", type=int, default=None)
 
 	return parser.parse_args(args)
 
@@ -75,15 +76,15 @@ def main(out=None):
 
 	if (args.solve):
 		if (args.save_screenshot != None):
-			StartBrowser(words, solvetype="wordle", headless=args.show_browser, ss=os.path.abspath(args.save_screenshot))
+			StartBrowser(words, solvetype="wordle", headless=args.show_browser, ss=os.path.abspath(args.save_screenshot), hint=args.hint)
 		else:
-			StartBrowser(words, solvetype="wordle", headless=args.show_browser)
+			StartBrowser(words, solvetype="wordle", headless=args.show_browser, hint=args.hint)
 		return
 	if (args.wordle_archive != None):
 		if (args.save_screenshot != None):
-			StartBrowser(words, solvetype=args.wordle_archive, headless=args.show_browser, ss=os.path.abspath(args.save_screenshot))
+			StartBrowser(words, solvetype=args.wordle_archive, headless=args.show_browser, ss=os.path.abspath(args.save_screenshot), hint=args.hint)
 		else:
-			StartBrowser(words, solvetype=args.wordle_archive, headless=args.show_browser)
+			StartBrowser(words, solvetype=args.wordle_archive, headless=args.show_browser, hint=args.hint)
 		
 		return
 
@@ -167,13 +168,13 @@ def RemoveCopy(result, out=None):
 	return result
 
 @logger
-def StartBrowser(words, solvetype="wordle", headless=True, ss=None, out=None):
+def StartBrowser(words, solvetype="wordle", headless=True, ss=None, out=None, hint=None):
 	out("Creating webdriver.")
 
 	option = webdriver.ChromeOptions()
 
 	option.binary_location = os.path.dirname(__file__) + "\\..\\chrome-win\\chrome.exe"
-	if (headless):
+	if (headless or hint != None):
 		option.headless = True
 		option.add_argument('--disable-gpu')
 	option.add_experimental_option('excludeSwitches', ['enable-logging'])
@@ -256,7 +257,8 @@ def StartBrowser(words, solvetype="wordle", headless=True, ss=None, out=None):
 	letters = br.execute_script("return arguments[0].shadowRoot", board[row]).find_element(By.CLASS_NAME, "row").find_elements(By.TAG_NAME, "game-tile")
 	for letter in range(len(letters)):
 		result[letters[letter].get_attribute("evaluation")] += letters[letter].get_attribute("letter") + str(letter) + ","
-		out(letters[letter].get_attribute("letter") + ": " + letters[letter].get_attribute("evaluation"))
+		if (hint == None):
+			out(letters[letter].get_attribute("letter") + ": " + letters[letter].get_attribute("evaluation"))
 
 	result = RemoveCopy(result)
 
@@ -268,9 +270,28 @@ def StartBrowser(words, solvetype="wordle", headless=True, ss=None, out=None):
 			#img = Image.open(ss)
 			#img.crop((785, 204, 1118, 607)).save(ss)
 			out(f"Screenshot saved to {ss}.")
-		out(f"Answer found! {board[row].get_attribute('letters')}")
+		if (hint == None):
+			out(f"Answer found! {board[row].get_attribute('letters')}")
+		else:
+			out(f"The letter at the {hint} position is {board[row].get_attribute('letters')[int(hint-1)]}.")
 		br.close()
 		return
+
+	if (hint != None):
+		if (str(hint-1) in result["correct"]):
+			for let in range(len(result["correct"])):
+				if (result["correct"][let] == str(hint-1)):
+					letterhint = result["correct"][let-1]
+					if (ss != None):
+						out("Taking screenshot.")
+						time.sleep(2)
+						br.save_screenshot(ss)
+						#img = Image.open(ss)
+						#img.crop((785, 204, 1118, 607)).save(ss)
+						out(f"Screenshot saved to {ss}.")
+					out(f"The letter at the {hint} position is {letterhint}.")
+					br.close()
+					return
 
 	time.sleep(1)
 
@@ -317,7 +338,8 @@ def StartBrowser(words, solvetype="wordle", headless=True, ss=None, out=None):
 		letters = br.execute_script("return arguments[0].shadowRoot", board[row]).find_element(By.CLASS_NAME, "row").find_elements(By.XPATH, "*")
 		for letter in range(len(letters)):
 			result[letters[letter].get_attribute("evaluation")] += letters[letter].get_attribute("letter") + str(letter) + ','
-			out(letters[letter].get_attribute("letter") + ": " + letters[letter].get_attribute("evaluation"))
+			if (hint == None):
+				out(letters[letter].get_attribute("letter") + ": " + letters[letter].get_attribute("evaluation"))
 
 
 		result = RemoveCopy(result)
@@ -330,11 +352,30 @@ def StartBrowser(words, solvetype="wordle", headless=True, ss=None, out=None):
 				#img = Image.open(ss)
 				#img.crop((785, 204, 1118, 607)).save(ss)
 				out(f"Screenshot saved to {ss}.")
-			out(f"Answer found!: {f.LIGHTYELLOW_EX}{board[row].get_attribute('letters')}")
+			if (hint == None):
+				out(f"Answer found! {board[row].get_attribute('letters')}")
+			else:
+				out(f"The letter at the {hint} position is {board[row].get_attribute('letters')[int(hint-1)]}.")
 			br.close()
 			return
 
 		time.sleep(1)
+
+		if (hint != None):
+			if (str(hint-1) in result["correct"]):
+				for let in range(len(result["correct"])):
+					if (result["correct"][let] == str(hint-1)):
+						letterhint = result["correct"][let-1]
+						if (ss != None):
+							out("Taking screenshot.")
+							time.sleep(2)
+							br.save_screenshot(ss)
+							#img = Image.open(ss)
+							#img.crop((785, 204, 1118, 607)).save(ss)
+							out(f"Screenshot saved to {ss}.")
+						out(f"The letter at the {hint} position is {letterhint}.")
+						br.close()
+						return
 
 		if (row >= 5):
 			out(f"No answer found, restarting...")
