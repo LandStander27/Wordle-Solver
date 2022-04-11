@@ -55,7 +55,7 @@ def ArgParser(args, out=None):
 	parser.add_argument("-wa", "--wordle-archive", help="Start solving a wordle archive (https://wordlearchive.com/{argument})", type=int)
 	parser.add_argument("-sb", "--show-browser", help="Show the browser window", action="store_false", default=True)
 	parser.add_argument("-ss", "--save-screenshot", help="Save a screenshot of the wordle once the right answer is found", type=str)
-	parser.add_argument("--hint", help="Pass a number and you will get the letter that is in that place in the word, if this is not passed the wordle/wordle archive is solved regularly. --show-browser is ignored and logs are supressed", type=int, default=None)
+	parser.add_argument("--hint", help="Pass a number and you will get the letter that is in that place in the word, if this is not passed the wordle/wordle archive is solved regularly. --show-browser is ignored and logs are suppressed", type=int, default=None)
 
 	return parser.parse_args(args)
 
@@ -271,7 +271,7 @@ def StartBrowser(words, solvetype="wordle", headless=True, ss=None, out=None, hi
 			#img.crop((785, 204, 1118, 607)).save(ss)
 			out(f"Screenshot saved to {ss}.")
 		if (hint == None):
-			out(f"Answer found! {board[row].get_attribute('letters')}")
+			out(f"Answer found! {f.LIGHTYELLOW_EX}{board[row].get_attribute('letters')}")
 		else:
 			out(f"The letter at the {hint} position is {board[row].get_attribute('letters')[int(hint-1)]}.")
 		br.close()
@@ -353,7 +353,7 @@ def StartBrowser(words, solvetype="wordle", headless=True, ss=None, out=None, hi
 				#img.crop((785, 204, 1118, 607)).save(ss)
 				out(f"Screenshot saved to {ss}.")
 			if (hint == None):
-				out(f"Answer found! {board[row].get_attribute('letters')}")
+				out(f"Answer found! {f.LIGHTYELLOW_EX}{board[row].get_attribute('letters')}")
 			else:
 				out(f"The letter at the {hint} position is {board[row].get_attribute('letters')[int(hint-1)]}.")
 			br.close()

@@ -40,8 +40,17 @@ requirements.txt
 ```
 - Default = False
 - If false then the browser will open headless
+- Is ignored when --hint is specified
 ## Save Screenshot
 ```
 -ss FILE_PATH, --save_screenshot FILE_PATH
 ```
 - Saves a screenshot once the right answer was found
+## Show Hint
+```
+--hint LETTER_PLACE
+```
+- Shows you the letter in the place you specify
+- It doesn't solve the word fully and only waits until that place is returned as correct
+- -sb, --show-browser is ignored during this
+- This suppresses log output as well
