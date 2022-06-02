@@ -43,7 +43,12 @@ def DownloadData(out=None):
 	except requests.Timeout or ConnectionRefusedError or ConnectionError or ConnectionResetError or ConnectionAbortedError:
 		sys.exit("Unstable internet")
 
-	return words.text.split("\n")
+	temp = words.text.split("\n")
+	for i, word in enumerate(temp):
+		
+		temp[i] = word.lower()[0:5]
+
+	return temp
 
 letters = "q w e r t y u i o p a s d f g h j k l z x c v b n m".split(" ")
 
@@ -380,7 +385,7 @@ def StartBrowser(words, solvetype="wordle", headless=True, ss=None, out=None, hi
 		if (row >= 5):
 			out(f"No answer found, restarting...")
 			br.close()
-			StartBrowser(words, solvetype=solvetype, headless=headless, ss=ss)
+			StartBrowser(words, solvetype=solvetype, headless=headless, ss=ss, hint=hint)
 			sys.exit()
 
 		newwords = []
