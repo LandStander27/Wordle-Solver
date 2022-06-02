@@ -36,7 +36,7 @@ def logger(func):
 
 @logger
 def DownloadData(out=None):
-	link = "https://raw.githubusercontent.com/tabatkins/wordle-list/main/words"
+	link = "https://raw.githubusercontent.com/LandStander27/Wordle-Words/master/words.txt"
 
 	try:
 		words = requests.get(link, timeout=5)
